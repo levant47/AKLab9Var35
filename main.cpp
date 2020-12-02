@@ -16,17 +16,21 @@ void first_task()
         ; f(n) = 418 / (2*n^2 + 7.3)
         finit
         mov ecx, 0
+        fld1
         fld [zero]
 
         loop_start:
-        fld1
+        fld ST(1)
         fmul ST(0), ST(0)
         fmul [b]
         fadd [c]
         fdivr [a]
-        fadd ST(0), ST(1)
+        fadd
         fst [result + ecx * 4]
 
+        fld1
+        fadd ST(2), ST(0)
+        fstp ST(0)
         inc ecx
         cmp ecx, result_size
         jne loop_start
@@ -55,9 +59,7 @@ void second_task()
 
         loop_start: ; at the start of the loop there should an up to date value of X in ST(0)
 
-        fld1
-        fsub ST(0), ST(0)
-        fadd ST(0), ST(1) ; load X which is in ST(1) into ST(0)
+        fld ST(0) ; load X which is in ST(1) into ST(0)
 
         fld [b]
         fyl2x
@@ -70,12 +72,10 @@ void second_task()
         fxch st(1)
         fstp st ; calculate 2.5 ^ x, the result is in ST(0), current value of X is still in ST(1)
 
-        fld1
-        fsub ST(0), ST(0)
-        fadd ST(0), ST(2) ; load X which is in ST(1) into ST(0)
+        fld ST(1) ; load X which is in ST(1) into ST(0)
 
         fmul ST(0), ST(0) ; x ^ 2
-        faddp ST(1), ST(0) ; add the two operands
+        fadd ; add the two operands
 
         fdivr [a]
 
@@ -85,7 +85,7 @@ void second_task()
 
         fstp ST(0) ; drop the calculation since it is no longer needed
         fld1
-        faddp ST(1), ST(0)
+        fadd
         jmp loop_start ; increment X which is in ST(0) after faddp and continue looping
 
         loop_end:
@@ -98,7 +98,7 @@ void second_task()
 void third_task()
 {
     float result;
-    float a = 10;
+    float a = 2;
     float b = 4;
     float c = 40;
     float d = 180;
@@ -124,15 +124,15 @@ void third_task()
         fadd
 
         ; acsc(x) = atan(sqrt(1/(x*x-1)))
-        fld     st(0)           ;Compute x*x
+        fld ST(0) ; Compute x*x
         fmul
-        fld1                    ;Compute x*x-1
+        fld1 ; Compute x*x-1
         fsub
-        fld1                    ;Compute 1/(x*x-1)
+        fld1 ; Compute 1/(x*x-1)
         fdivr
-        fsqrt                   ;Compute sqrt(1/(x*x-1))
+        fsqrt ; Compute sqrt(1/(x*x-1))
         fld1
-        fpatan                  ;Compute atan of above.
+        fpatan ; Compute atan of above.
 
         fld [f]
         fmulp ST(1), ST(0)
