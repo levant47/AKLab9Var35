@@ -142,40 +142,39 @@ void third_task()
 
 void fourth_task()
 {
-    float initial_value = 0.5;
-    float step = 0.2;
-    float a = 7;
+    float initial_value = 0.5f;
+    float step = 0.2f;
+    float a = 7.f;
     const int result_size = 5;
     float result[result_size];
 
     __asm
     {
-        ; Y = 7^x
-        finit
-        mov ecx, 0
-        fld [initial_value]
+        finit ; очистка регистров FPU
+        mov ecx, 0 ; инициализация счетчика цикла
+        fld [initial_value] ; загружаем начальное значение X на стек
 
+        ; в начале каждой итерации цикла в ST(0) хранится текущее значение X
         loop_start:
-
-        fld ST(0)
+        fld ST(0) ; повторно загружаем X
         fld [a]
-        fyl2x
+        fyl2x ; считаем X * log_2(7)
         fld1
-        fld ST(1)
-        fprem
-        f2xm1
-        fadd
-        fscale
+        fld ST(1) ; повторно загружаем результат X * log_2(7)
+        fprem ; считаем дробную часть X * log_2(7)
+        f2xm1 ; считаем 2 ^ (дробную часть от X * log_2(7)) - 1
+        fadd ; добавляем 1 к результату
+        fscale ; завершить вычисление 7 ^ X, результат находится в ST(0)
         fxch ST(1)
-        fstp ST(0) ; calculate 2.5 ^ x, the result is in ST(0), current value of X is still in ST(1)
+        fstp ST(0) ; по окончанию блока в ST(0) находится значение 7^X, а в ST(1) текущее значение X
 
-        fstp [result + ecx * 4]
+        fstp [result + ecx * 4] ; сохраняем результат в памяти
 
-        inc ecx
         fld [step]
-        fadd
+        fadd ; увеличиваем X на 0.2
+        inc ecx ; увеличиваем счетчик цикла
         cmp ecx, result_size
-        jne loop_start
+        jne loop_start ; если прошло 5 итераций, то заканчиваем цикл
     }
 
     printf("4th\n");
