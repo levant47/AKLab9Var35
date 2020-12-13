@@ -46,50 +46,46 @@ void first_task()
 
 void second_task()
 {
-    float a = 20;
-    float b = 2.5;
-    float c = 0.2;
+    float a = 20.f;
+    float b = 2.5f;
+    float c = 0.2f;
     float result;
 
     __asm
     {
-        ; f(n) = 20 / (x ^ 2 + 2.5 ^ x)
-        finit
-        fld1 ; initialize X to 1
+        finit ; очистка регистров FPU
+        fld1 ; загружаем на стек 1, которая будет начальным значением X
 
-        loop_start: ; at the start of the loop there should an up to date value of X in ST(0)
-
-        fld ST(0) ; load X which is in ST(1) into ST(0)
-
-        fld [b]
-        fyl2x
+        ; в начале каждой итерации цикла в ST(0) будет храниться текущее значение X
+        loop_start:
+        fld ST(0) ; загружаем значение X повторно на стек
+        fld [b] ; загружаем 2.5 на стек
+        fyl2x ; считаем X * log_2(2.5)
         fld1
-        fld st(1)
-        fprem
-        f2xm1
-        fadd
-        fscale
-        fxch st(1)
-        fstp st ; calculate 2.5 ^ x, the result is in ST(0), current value of X is still in ST(1)
+        fld ST(1) ; повторно загружаем результат X * log_2(2.5)
+        fprem ; считаем дробную часть X * log_2(2.5)
+        f2xm1 ; считаем 2 ^ (дробную часть от X * log_2(2.5)) - 1
+        fadd ; добавляем 1 к результату
+        fscale ; завершить вычисление 2.5 ^ X, результат находится в ST(0)
+        fxch ST(1)
+        fstp ST(0) ; по окончанию блока в ST(0) находится значение 2.5^X, а в ST(1) текущее значение X
 
-        fld ST(1) ; load X which is in ST(1) into ST(0)
-
-        fmul ST(0), ST(0) ; x ^ 2
-        fadd ; add the two operands
-
-        fdivr [a]
+        fld ST(1) ; повторно загрузить текущее значение X на стек
+        fmul ST(0), ST(0) ; считаем X^2
+        fadd ; сложить X^2 + 2.5^X
+        fdivr [a] ; вычислить 20 / (X^2 + 2.5^X)
 
         fld [c]
         fcomip ST(0), ST(1)
-        jb loop_end ; if the result, which is in ST(0) after fcomip, is less than 0.2, then we stop the loop
+        jb loop_end ; если текущее значение функции меньше 0.2, то закончить цикл
 
-        fstp ST(0) ; drop the calculation since it is no longer needed
+        fstp ST(0) ; убрать текущее значение функции со стека, так как оно нам больше не нужно
         fld1
-        fadd
-        jmp loop_start ; increment X which is in ST(0) after faddp and continue looping
+        fadd ; увеличить на 1 текущее значение X
+        jmp loop_start ; продолжить цикл
 
         loop_end:
-        fstp [result] ; write out the result
+        fstp [result] ; записать текущее значение функции в память
     }
 
     printf("2nd: %d\n\n", (int)result);
