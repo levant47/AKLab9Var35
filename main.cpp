@@ -1,7 +1,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
-const float zero = 0;
+const float zero = 0.f;
+const float one = 1.f;
 
 void first_task()
 {
@@ -106,14 +107,11 @@ void third_task()
         finit ; очистка регистров FPU
 
         fld [a]
-        fld [b]
-        fmul ; считаем 4 * A
+        fmul [b] ; считаем 4 * A
 
-        fld [c]
-        fld [d]
-        fdiv ; считаем 40 / 180
         fldpi ; загружаем π на стек
-        fmul ; вычисляем π * 40 / 180, что является переводом 40° в радианы
+        fmul [c]
+        fdiv [d] ; вычисляем π * 40 / 180, что является переводом 40° в радианы
         fptan ; вычисляем tan(40°), результат находится в ST(1)
         fstp ST(0) ; убираем ненужное значение со стека
 
@@ -121,18 +119,14 @@ void third_task()
 
         ; считаем арккосеканс по формуле arccsc(x) = arctan(sqrt(1 / (x*x - 1)))
         ; далее будем обозначать текущий результат, который является аргументом арккосеканса, как X
-        fld ST(0)
-        fmul ; вычисляем X^2
-        fld1
-        fsub ; вычисляем X*X - 1
-        fld1
-        fdivr ; вычисляем 1 / (X*X - 1)
+        fmul ST(0), ST(0) ; вычисляем X^2
+        fsub [one] ; вычисляем X*X - 1
+        fdivr [one] ; вычисляем 1 / (X*X - 1)
         fsqrt ; вычисляем sqrt(1 / (X*X - 1))
         fld1
         fpatan ; вычисляем arctan(sqrt(1 / (X*X - 1))), что равно arccsc(X), где X это предыдущий результат = 4*A + tan(40°)
 
-        fld [f]
-        fmul ; вычисляем 3 * arccsc(4*A + tan(40°))
+        fmul [f] ; вычисляем 3 * arccsc(4*A + tan(40°))
 
         fstp [result] ; сохраняем результат в памяти
     }
